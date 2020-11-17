@@ -32,7 +32,7 @@ MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>%
   select(name, cert_date, build_type, cert_name, cert_num)
 ```
 
-Creating the variable
+Making the independent variable
 ```{r}
 MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>% 
   mutate(new_build = case_when(
@@ -45,6 +45,18 @@ MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>%
     build_type == "Retail - Commercial Interiors" ~ 0
   )) %>% 
   drop_na(new_build)
+
+mean(MoCo_MD_LEED_Cert$new_build)
 ```
 
+Working with the Dependent Variable
+```{r}
+MoCo_MD_LEED_Cert %>% 
+  group_by(new_build) %>% 
+  summarize(
+    mean(cert_num)
+  )
+
+summarize(MoCo_MD_LEED_Cert, mean(cert_num))
+```
 
