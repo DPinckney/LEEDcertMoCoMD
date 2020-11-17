@@ -1,0 +1,38 @@
+---
+title: 'Final Project Milestone 2: Analyses'
+author: "Daniel Pinckney"
+date: "11/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+MoCo_MD_LEED_Cert <- read_csv("data/Montgomery_County_MD_LEED_Certified_Buildings.csv")
+```
+
+## Preprocessing of Data
+```{r}
+colnames(MoCo_MD_LEED_Cert)
+MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>% 
+  rename(
+    name = "Building Name",
+    path = "Path",
+    cert_date = "Certification date",
+    city = "City",
+    state = "State",
+    country = "Country",
+    build_type = "Rating system",
+    version = "Version",
+    cert_name = "Certification level (name)",
+    cert_num = "Certification level (numeric)"
+  ) %>% 
+  select(name, cert_date, build_type, cert_name, cert_num)
+```
+
+
+```{r}
+MoCo_MD_LEED_Cert[, 7]
+```
+
