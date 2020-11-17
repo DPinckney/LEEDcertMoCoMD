@@ -13,6 +13,7 @@ MoCo_MD_LEED_Cert <- read_csv("data/Montgomery_County_MD_LEED_Certified_Building
 ```
 
 ## Preprocessing of Data
+Renaming the columns to make them workable
 ```{r}
 colnames(MoCo_MD_LEED_Cert)
 MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>% 
@@ -31,8 +32,19 @@ MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>%
   select(name, cert_date, build_type, cert_name, cert_num)
 ```
 
-
+Creating the variable
 ```{r}
-MoCo_MD_LEED_Cert[, 7]
+MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>% 
+  mutate(new_build = case_when(
+    build_type == "Commercial Interiors" ~ 0,
+    build_type == "New Construction" ~ 1,
+    build_type == "Core and Shell" ~ 1,
+    build_type == "Schools - New Construction" ~ 1,
+    build_type == "Existing Buildings" ~ 0,
+    build_type == "Retail - New Construction" ~ 1,
+    build_type == "Retail - Commercial Interiors" ~ 0
+  )) %>% 
+  drop_na(new_build)
 ```
+
 
