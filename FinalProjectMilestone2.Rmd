@@ -2,7 +2,9 @@
 title: 'Final Project Milestone 2: Analyses'
 author: "Daniel Pinckney"
 date: "11/17/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -12,8 +14,10 @@ library(readr)
 MoCo_MD_LEED_Cert <- read_csv("data/Montgomery_County_MD_LEED_Certified_Buildings.csv")
 ```
 
-## Preprocessing of Data
-Renaming the columns to make them workable
+## Data Processing
+
+#### Renaming the columns to make them workable
+
 ```{r}
 colnames(MoCo_MD_LEED_Cert)
 MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>% 
@@ -32,7 +36,8 @@ MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>%
   select(name, cert_date, build_type, cert_name, cert_num)
 ```
 
-Making the independent variable
+#### Making the independent variable
+
 ```{r}
 MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>% 
   mutate(new_build = case_when(
@@ -46,17 +51,86 @@ MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>%
   )) %>% 
   drop_na(new_build)
 
-mean(MoCo_MD_LEED_Cert$new_build)
+summarize(MoCo_MD_LEED_Cert, 
+          mean_new_build = mean(new_build))
 ```
 
-Working with the Dependent Variable
+#### Working with the Dependent Variable
+
 ```{r}
 MoCo_MD_LEED_Cert %>% 
   group_by(new_build) %>% 
   summarize(
-    mean(cert_num)
+    mean_score = mean(cert_num)
   )
 
-summarize(MoCo_MD_LEED_Cert, mean(cert_num))
+summarize(MoCo_MD_LEED_Cert, 
+          mean_score = mean(cert_num))
+```
+
+## Analysis
+
+#### ATE Calculations
+
+```{r}
+MoCo_MD_LEED_Cert %>% 
+  group_by(new_build) %>% 
+  summarize(
+    level_mean = mean(cert_num),
+    level_se = sd(cert_num) / sqrt(n())
+  ) %>% 
+  pivot_wider(names_from = new_build, values_from = c(level_mean, level_se)) %>% 
+  mutate(
+    ate_level_diff = level_mean_1 - level_mean_0,
+    ate_level_se = sqrt(level_se_1 ^ 2 + level_se_0 ^2)
+  ) %>% 
+  select(ate_level_diff, ate_level_se)
+```
+
+#### Plot
+
+```{r}
+ggplot(MoCo_MD_LEED_Cert, aes(cert_num)) +
+  geom_histogram(fill = "seagreen", binwidth = 1, color = "black") +
+  labs(y = "Number of Certified Buildings", x = "Certification Level",
+       title = "Distribution of Building Certification Levels")
+```
+
+
+#### New Building Histogram
+
+```{r}
+MoCo_MD_LEED_Cert_new <- MoCo_MD_LEED_Cert %>% 
+  filter(new_build == 1)
+
+ggplot(MoCo_MD_LEED_Cert_new, aes(cert_num)) +
+  geom_histogram(fill = "seagreen", binwidth = 1, color = "black") +
+  labs(y = "Number of Certified Buildings", x = "Certification Level",
+       title = "Distribution of New Building Certification Levels")
+```
+
+
+#### Existing Building Histogram
+
+```{r}
+MoCo_MD_LEED_Cert_exist <- MoCo_MD_LEED_Cert %>% 
+  filter(new_build == 0)
+
+ggplot(MoCo_MD_LEED_Cert_exist, aes(cert_num)) +
+  geom_histogram(fill = "seagreen", binwidth = 1, color = "black") +
+  labs(y = "Number of Certified Buildings", x = "Certification Level", 
+       title = "Distribution of Existing Building Certification Levels")
+```
+
+#### Regression
+
+```{r}
+lin_fit <- lm(cert_num ~ new_build, data = MoCo_MD_LEED_Cert)
+summary(lin_fit)
+
+# I am not sure what to do with the regression for this data, but here it is
+
+# also considering doing a regression like lm(cert_num ~ new_build + cert_date), 
+# but the date data is strange
 ```
 
