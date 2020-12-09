@@ -1,0 +1,20 @@
+---
+title: "Final Project"
+author: "Daniel Pinckney"
+date: "12/3/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+## Data and Summarization
+
+## Results and Regression
+
+## Conclusion
