@@ -68,6 +68,15 @@ summarize(MoCo_MD_LEED_Cert,
           mean_score = mean(cert_num))
 ```
 
+#### Date
+
+```{r}
+MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>% 
+  mutate(cert_date = substr(cert_date, 7L, 10L)) %>% 
+  mutate(cert_date = as.numeric(cert_date))
+```
+
+
 ## Analysis
 
 #### ATE Calculations
@@ -128,7 +137,7 @@ ggplot(MoCo_MD_LEED_Cert_exist, aes(cert_num)) +
 lin_fit <- lm(cert_num ~ new_build, data = MoCo_MD_LEED_Cert)
 summary(lin_fit)
 
-# I am not sure what to do with the regression for this data, but here it is
+# I am not sure how to plot the regression for this data, but here it is
 
 # also considering doing a regression like lm(cert_num ~ new_build + cert_date), 
 # but the date data is strange

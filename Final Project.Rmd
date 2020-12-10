@@ -12,9 +12,17 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction
+extract year from date, also age
 
 ## Data and Summarization
+summary statistic - center & spread 
+what does the dependent variable look like
+factors or binary, include bar charts
 
 ## Results and Regression
+regression table modelsummary
+
+after this you only need your own interpretation
+scatterplot main variable, dependent on y add trend line
 
 ## Conclusion
