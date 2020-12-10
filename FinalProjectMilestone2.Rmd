@@ -76,6 +76,13 @@ MoCo_MD_LEED_Cert <- MoCo_MD_LEED_Cert %>%
   mutate(cert_date = as.numeric(cert_date))
 ```
 
+#### Saving Data
+
+```{r}
+write.csv(MoCo_MD_LEED_Cert, file = "data_output/MoCo_MD_LEED_Cert_edit.csv",
+          row.names = FALSE)
+```
+
 
 ## Analysis
 
@@ -137,6 +144,8 @@ ggplot(MoCo_MD_LEED_Cert_exist, aes(cert_num)) +
 lin_fit <- lm(cert_num ~ new_build, data = MoCo_MD_LEED_Cert)
 summary(lin_fit)
 
+multi_fit <- lm(cert_num ~ new_build + cert_date, data = MoCo_MD_LEED_Cert)
+summary(multi_fit)
 # I am not sure how to plot the regression for this data, but here it is
 
 # also considering doing a regression like lm(cert_num ~ new_build + cert_date), 
