@@ -7,23 +7,106 @@ output:
   html_document: default
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+options(width = 100)
+library(tidyverse)
+library(readr)
+library(knitr)
 ```
 
 ## Introduction
 Does the type of building affect the level of LEED certification it receives? In this study, I plan to examine the extent to which new buildings receive higher LEED certification levels. I hypothesize that new buildings receive higher LEED certification than retrofits of existing buildings. When building new buildings, contractors and architects have more freedom to design within the LEED framework and are able to satisfy more of the criteria for higher certification levels. When retrofitting existing structures, builders must work with the existing shell of the building, potentially limiting their ability to reach the highest levels of certification. If I observe higher certification levels with new builds relative to existing structures, this would provide support for my hypothesis. If, on the other hand, I observe lower or similar levels of certification with new builds, this would provide evidence against my hypothesis. When I run my regression of the LEED certification level on the building type indicator variable, a positive, significant coefficient would indicate support for my hypothesis.
 
 ## Data and Summarization
-My sample is comprised of each of the LEED certified building projects in Montgomery County, Maryland from 2004 to 2015 excluding homes. My unit of analysis is a class of building (e.g., a new construction). The explanatory variable of interest is whether the construction is a new building or a retrofit of an existing structure. The variable is coded =1 for new construction or core & shell and =0 for existing buildings and commercial interiors. An interesting covariate is the year built, as new building practices may also improve scores. My outcome variable is the average LEED certification level the building type receives. The variable is coded from 1 to 4, where 1 is a platinum level certification and 4 is certified. This variable is measured from US Green Building Councils LEED ratings that evaluate various green building strategies across several categories. 
-summary statistic - center & spread 
-what does the dependent variable look like
-factors or binary, include bar charts
+My sample is comprised of each of the LEED certified building projects in Montgomery County, Maryland from 2004 to 2015, excluding homes. This data is likely representative of most LEED projects since 2004, but the analysis could limited by the geographic restrictions. My unit of analysis is a class of building (e.g., a new construction). The explanatory variable of interest is whether the construction is a new building or a retrofit of an existing structure. The variable is coded =1 for new construction or core & shell and =0 for existing buildings and commercial interiors. An interesting covariate is the year built, as new building practices may also improve scores. My outcome variable is the average LEED certification level the building type receives. The variable is coded from 1 to 4, where 1 is a platinum level certification and 4 is certified. This variable is measured from US Green Building Councils LEED ratings that evaluate various green building strategies across several categories. 
+
+```{r}
+MoCo_MD_LEED_Cert_edit <- read_csv("data_output/MoCo_MD_LEED_Cert_edit.csv", col_types = cols())
+```
+
+```{r}
+kable(summarize(MoCo_MD_LEED_Cert_edit, 
+          prop_new_build = mean(new_build)), col.names = "Proportion New Build", caption = "Proportion of New Builds")
+```
+
+```{r}
+kable(summarize(MoCo_MD_LEED_Cert_edit, 
+          mean_score = mean(cert_num)), col.names = "Mean Score", caption = "Average Certification Level")
+```
+
+```{r}
+kable(MoCo_MD_LEED_Cert_edit %>% 
+  group_by(new_build) %>% 
+  summarize(
+    level_mean = mean(cert_num),
+    level_se = sd(cert_num) / sqrt(n())
+  ) %>% 
+  pivot_wider(names_from = new_build, values_from = c(level_mean, level_se)) %>% 
+  mutate(
+    ate_level_diff = level_mean_1 - level_mean_0,
+    ate_level_se = sqrt(level_se_1 ^ 2 + level_se_0 ^2)
+  ) %>% 
+  select(ate_level_diff, ate_level_se), col.names = c("ATE", "SE"), caption = "Average Treatment Effect of New Build")
+```
+
+```{r fig1, fig.height = 4, fig.width = 7}
+ggplot(MoCo_MD_LEED_Cert_edit, aes(cert_num)) +
+  geom_histogram(fill = "forestgreen", binwidth = 1, color = "black") +
+  labs(y = "Number of Certified Buildings", x = "Certification Level",
+       title = "Distribution of Building Certification Levels")
+```
+
+```{r fig2, fig.height = 4, fig.width = 7}
+MoCo_MD_LEED_Cert_new <- MoCo_MD_LEED_Cert_edit %>% 
+  filter(new_build == 1)
+
+ggplot(MoCo_MD_LEED_Cert_new, aes(cert_num)) +
+  geom_histogram(fill = "darkgoldenrod2", binwidth = 1, color = "black") +
+  labs(y = "Number of Certified Buildings", x = "Certification Level",
+       title = "Distribution of New Building Certification Levels")
+```
+
+```{r fig3, fig.height = 4, fig.width = 7}
+MoCo_MD_LEED_Cert_exist <- MoCo_MD_LEED_Cert_edit %>% 
+  filter(new_build == 0)
+
+ggplot(MoCo_MD_LEED_Cert_exist, aes(cert_num)) +
+  geom_histogram(fill = "thistle4", binwidth = 1, color = "black") +
+  labs(y = "Number of Certified Buildings", x = "Certification Level", 
+       title = "Distribution of Existing Building Certification Levels")
+```
 
 ## Results and Regression
-regression table modelsummary
+```{r}
+new_fit <- lm(cert_num ~ new_build, data = MoCo_MD_LEED_Cert_edit)
 
-after this you only need your own interpretation
-scatterplot main variable, dependent on y add trend line
+age_new_fit <- lm(cert_num ~ new_build + cert_date, data = MoCo_MD_LEED_Cert_edit)
+
+fits <- list("New Build Only" = new_fit, "Add Date" = age_new_fit)
+
+coefs <- c(
+  "new_build" = "New Build",
+  "cert_date" = "Certification Year",
+  "(Intercept)" = "Constant"
+)
+
+modelsummary::modelsummary(fits, coef_map = coefs, 
+                           gof_omit = "AIC|BIC|Log.Lik.|F", stars = TRUE)
+```
+
+```{r}
+ggplot(MoCo_MD_LEED_Cert_edit, aes(x = new_build, y = cert_num)) +
+  geom_point(color = "grey40", alpha = 0.1, size = 3) +
+  geom_abline(slope = coef(new_fit)["new_build"], 
+              intercept = coef(new_fit)["(Intercept)"], 
+              color = "forestgreen", size = 1) +
+  labs(title = "Certification Levels Between New and Existing Buildings", x = "New Build Status", y = "Certification Level")
+```
+
+The main coefficient of interest, that on `new_build`, at first appears to support the hypothesis as it is positive. It takes a value of `r round(coef(new_fit)["new_build"], 5)`, which means that for an one unit increase in `new_build`, moving from not being a new building to being one, there is an expected `r round(coef(new_fit)["new_build"], 5)` in its certification level. However, the coefficient does not appear to be statistically significant. The observed relationship could be due to chance error or some other confounder and the actual relationship could still follow the null hypothesis of no relationship. Thus, I cannot draw the conclusion that a causal effect exists and must fail to reject the null hypothesis. 
 
 ## Conclusion
+The results that I found above do not indicate a significant coefficient on the explanatory variable `new_build`, although it is positive. Thus I fail to reject the null hypothesis. There is in fact very little significance to the result I found, due primarily to the high standard error relative to the observed difference in means. This analysis could be limited in a number of ways. Perhaps the builders who seek a LEED certification are only doing so because they know the project they are working on will end up being certifiable, skewing the results toward better certification. In the data, most buildings were gold certification, the second highest level. 
+
+ a brief (one paragraph) concluding section that summarizes your results, assesses the extent to which you find support for your hypothesis, describes limitations of your analysis and threats to inference, and states how your analysis could be improved (e.g., improved data that would be useful to collect).
